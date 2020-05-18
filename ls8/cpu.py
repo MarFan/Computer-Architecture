@@ -7,29 +7,45 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256
+        self.reg = [0] * 8
+        self.hlt = False
+        self.pc = 0
+        # pass
 
     def load(self):
         """Load a program into memory."""
 
         address = 0
 
+        program = []
+    
+        with open(sys.argv[1]) as f:
+            for line in f:
+                program.append(int(line.strip().split('#')[0], 2))
+
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
 
         for instruction in program:
             self.ram[address] = instruction
             address += 1
 
+    def ram_read(self, address):
+        return self.reg[address]
+    
+    def ram_write(self, address, value):
+        self.reg[address] = value
+        return self.reg[address]
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -62,4 +78,37 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        # print(self.ram)
+        while not self.hlt:
+            instruction = self.ram[self.pc]
+            
+            # If instruction is '130'
+            if instruction == 130:
+                #    * add value to register
+                operand_a = self.pc + 1
+                operand_b = self.pc + 2
+                self.ram_write(self.ram[operand_a], self.ram[operand_b])
+                self.pc += 3
+
+            # If instruction is '71'
+            elif instruction == 71:
+                #   * print out reg position
+                operand_a = self.pc + 1
+                print(self.ram_read(self.ram[operand_a]))
+                self.pc += 2
+
+            elif instruction == 162:
+                operand_a = self.pc + 1
+                operand_b = self.pc + 2
+                print(self.ram_read(self.ram[operand_a]) * self.ram_read(self.ram[operand_b]))
+                self.pc += 3
+
+            # if instruction is '1'
+            #   * halt
+            elif instruction == 1:
+                self.hlt = True
+
+            else:
+                print(f'unknown instruction {instruction} at address {self.pc}')
+                exit(1)
+        # pass
