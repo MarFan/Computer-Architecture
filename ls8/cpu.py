@@ -22,7 +22,9 @@ class CPU:
     
         with open(sys.argv[1]) as f:
             for line in f:
-                program.append(int(line.strip().split('#')[0], 2))
+                if len(line.strip().split('#')[0]):
+                    self.ram[address] = int(line.strip().split('#')[0], 2)
+                    address += 1
 
         # For now, we've just hardcoded a program:
 
@@ -36,9 +38,9 @@ class CPU:
         #     0b00000001, # HLT
         # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
     def ram_read(self, address):
         return self.reg[address]
