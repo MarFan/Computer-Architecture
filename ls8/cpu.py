@@ -111,7 +111,6 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        # print(self.reg)
         while not self.halted:
             instruction = self.ram_read(self.pc)
 
