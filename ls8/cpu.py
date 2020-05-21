@@ -8,6 +8,9 @@ PRN = 0b01000111
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+ADD = 0b10100000
+RET = 0b00010001
 
 SP = 7
 
@@ -22,6 +25,7 @@ class CPU:
         self.halted = False
         self.pc = 0
         self.reg[SP] = 0xf4
+        self.inst_set_pc = 0
 
         self.branchtable = {}
         self.branchtable[HLT] = self.hlt
@@ -30,6 +34,9 @@ class CPU:
         self.branchtable[MUL] = self.mul
         self.branchtable[PUSH] = self.push
         self.branchtable[POP] = self.pop
+        self.branchtable[CALL] = self.call
+        self.branchtable[ADD] = self.add
+        self.branchtable[RET] = self.ret
 
 
         # pass
@@ -52,7 +59,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
         else:
@@ -109,6 +117,27 @@ class CPU:
         self.reg[operand_a] = value
         self.reg[SP] += 1
 
+    def call(self, operand_a=None, operand_b=None):
+        return_addr = self.pc + 2
+        
+        self.reg[SP] -= 1
+        top_of_stack_addr = self.reg[SP]
+        self.ram_write(self.reg[SP], return_addr)
+
+        reg_num = self.ram[self.pc + 1]
+        subroutine_addr = self.reg[reg_num]
+        
+        self.pc = subroutine_addr
+
+    def add(self, operand_a=None, operand_b=None):
+        self.alu("ADD", operand_a, operand_b)
+
+    def ret(self, operand_a=None, operand_b=None):
+        value = self.reg[SP]
+        return_addr = self.ram[value]
+        self.reg[SP] += 1        
+        self.pc = self.ram[value]
+
     def run(self):
         """Run the CPU."""
         while not self.halted:
@@ -117,8 +146,15 @@ class CPU:
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
+            instruction_size = ((instruction >> 6) & 0b11) + 1
+
             if instruction in self.branchtable:
                 self.branchtable[instruction](operand_a, operand_b)
-                self.pc += (instruction >> 6) + 1
             else:
                 self.halted = True
+
+            if ((instruction >> 4) & 0b1) != 1:
+                self.pc += instruction_size
+            
+        # print(self.reg)
+        # print(self.ram)
